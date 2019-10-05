@@ -7,13 +7,13 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 
 	// PHP variables
 	
-	$elect_type 	= 	filter_var($_POST["name"], FILTER_SANITIZE_STRING);	
+	$electronics 	= 	filter_var($_POST["electronics"], FILTER_SANITIZE_STRING);	
 	$watts 			= 	filter_var($_POST["watts"], FILTER_SANITIZE_STRING);
 	
 
 
 	//CHECKING FOR EMPTY FORMS
-	if (empty($elect_type)){
+	if (empty($electronics)){
 		die("Please enter your electronics name");
 	}
 	
@@ -29,16 +29,26 @@ if($_SERVER["REQUEST_METHOD"] == "POST"){
 	}
 
 
-	 //prepare sql insert query
-	$stmt = $conn->prepare("INSERT INTO electronics ( elect_type, power_consumption) VALUES (?,?)");
+	 //prepare sql insert query to insert into the electronics table
+	$query =  mysqli_query($conn,"INSERT INTO electronics (elect_type) VALUES ('$electronics')");
 
-
-	//bind parameters for markers, where (s = string, i = integer, d = double,  b = blob)
-	$stmt->bind_param('ss', $elect_type, $watts); 
-	
-	if($stmt->execute()){
-		print "your electronics and its description has been saved successfully!";
-	}else{
-		print $mysqli->error; //show mysql error if any
+	if (!$query) {
+		echo "Sorry, could not submit your Electronics at the moment!";
 	}
+	else {
+		// select the current id of the electronics and enter it into the watts table.
+		$elect_query =  "SELECT * FROM electronics WHERE elect_type = '$electronics' LIMIT 1";
+		$result = $conn->query($elect_query);
+		while ($row = $result->fetch_assoc()) {
+			$electronicsId = $row['id'];
+		}
+
+		// Now insert the id of the electronics into the watts table as well as the number of watts
+		$watts_query =  mysqli_query($conn,"INSERT INTO watts (electronics_id, power_consumption) VALUES ('$electronicsId', '$watts')");
+
+		// if everything submits well, display success message
+		if ($watts_query) {
+			echo "Your electronics and its description has been saved successfully!! <br><br><a href='insert.data.php'> << Back</a> | <a href='index1.php'> Calculate Watts >></a>";
+		}
+	}	
 }
